@@ -2,7 +2,7 @@ from image import Image
 import numpy as np
 
 
-def get_image_copy(old_img_arr_shape: tuple[int, ...]) -> Image:
+def get_new_image(old_img_arr_shape: tuple[int, ...]) -> Image:
     x_pixel, y_pixel, num_channels = old_img_arr_shape
     return Image(x_pixel, y_pixel, num_channels)
 
@@ -12,7 +12,7 @@ def brighten(image: Image, factor: float) -> Image:
     # factor is a value > 0, how much you want to brighten the image by (< 1 = darken, > 1 = brighten)
 
     # make empty image so we don't modify original one
-    new_im = get_image_copy(image.array.shape)
+    new_im = get_new_image(image.array.shape)
 
     # this is the most intuitive way to do this (non-vectorised)
     # for x in range(x_pixels):
@@ -20,15 +20,16 @@ def brighten(image: Image, factor: float) -> Image:
     #         for c in range(num_channels):
     #             new_im.array[x, y, c] = image.array[x, y, c] * factor
 
-    # vectorised version (does the same as the above, but faster)
+    # vectorised version which leverages numpy (does the same as the above, but faster)
     new_im.array = image.array * factor
 
     return new_im
 
 
 def adjust_contrast(image: Image, factor: float, mid: float = 0.5) -> Image:
-    # adjust the contrast by increasing the difference from the user-defined midpoint by factor amount
-    new_im = get_image_copy(image.array.shape)
+    # adjust the contrast by increasing the difference from the user-defined midpoint by
+    # factor amount
+    new_im = get_new_image(image.array.shape)
 
     for x in range(new_im.x_pixels):
         for y in range(new_im.y_pixels):
@@ -46,7 +47,10 @@ def blur(image: Image, kernel_size: int) -> Image:
     # (ie kernel_size = 3 would be neighbors to the left/right, top/bottom, and diagonals)
     # kernel size should always be an *odd* number
 
-    new_im = get_image_copy(image.array.shape)
+    new_im = get_new_image(image.array.shape)
+
+    # this is a variable that tells us how many neighbours we actually look at (ie for a kernel of
+    # 3, this value should be 1)
     neighbour_range = kernel_size // 2
 
     for x in range(new_im.x_pixels):
@@ -68,7 +72,7 @@ def blur(image: Image, kernel_size: int) -> Image:
     return new_im
 
     # note:
-    # this blur implemented above is a kernel of size n, where each value if 1/n^2
+    # the blur implemented above is a kernel of size n, where each value is 1/n^2
     # for example, k=3 would be this kernel:
     # [1/3 1/3 1/3]
     # [1/3 1/3 1/3]
@@ -76,14 +80,14 @@ def blur(image: Image, kernel_size: int) -> Image:
 
 
 def apply_kernel(image: Image, kernel: np.ndarray) -> Image:
-    # the kernel should be a 2D array that represents the kernel we'll use!
+    # 'kernel' should be a 2D array that represents the kernel we'll use!
     # for the sake of simiplicity of this implementation, let's assume that the kernel is SQUARE
     # for example the sobel x kernel (detecting horizontal edges) is as follows:
     # [1 0 -1]
     # [2 0 -2]
     # [1 0 -1]
 
-    new_im = get_image_copy(image.array.shape)
+    new_im = get_new_image(image.array.shape)
     kernel_size = kernel.shape[0]
     neighbour_range = kernel_size // 2
 
@@ -109,10 +113,19 @@ def apply_kernel(image: Image, kernel: np.ndarray) -> Image:
     return new_im
 
 
-def combine_images(image1, image2):
+def combine_images(image1: Image, image2: Image) -> Image:
     # let's combine two images using the squared sum of squares: value = sqrt(value_1**2, value_2**2)
     # size of image1 and image2 MUST be the same
-    pass
+
+    new_im = get_new_image(image1.array.shape)
+
+    for x in range(new_im.x_pixels):
+        for y in range(new_im.y_pixels):
+            for c in range(new_im.num_channels):
+                new_im.array[x, y, c] = (
+                    image1.array[x, y, c] ** 2 + image2.array[x, y, c] ** 2
+                ) ** 0.5
+    return new_im
 
 
 if __name__ == "__main__":
@@ -139,23 +152,27 @@ if __name__ == "__main__":
 
     # apply sobel edge detection kernel on the x and y axis
 
-    sobel_x_kernel = np.array(
-        [
-            [1, 2, 1],
-            [0, 0, 0],
-            [-1, -2, -1],
-        ]
-    )
+    # sobel_x_kernel = np.array(
+    #     [
+    #         [1, 2, 1],
+    #         [0, 0, 0],
+    #         [-1, -2, -1],
+    #     ]
+    # )
 
-    sobel_y_kernel = np.array(
-        [
-            [1, 0, -1],
-            [2, 0, -2],
-            [1, 0, -1],
-        ]
-    )
+    # sobel_y_kernel = np.array(
+    #     [
+    #         [1, 0, -1],
+    #         [2, 0, -2],
+    #         [1, 0, -1],
+    #     ]
+    # )
 
-    apply_kernel(city, sobel_x_kernel).write_image("edge_x.png")
-    apply_kernel(city, sobel_y_kernel).write_image("edge_y.png")
+    # apply_kernel(city, sobel_x_kernel).write_image("edge_x.png")
+    # apply_kernel(city, sobel_y_kernel).write_image("edge_y.png")
+
+    combine_images(
+        Image(filename="edge_x.png"), Image(filename="edge_y.png")
+    ).write_image("edge_xy.png")
 
     print("Done processing image.")
