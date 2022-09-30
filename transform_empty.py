@@ -91,30 +91,30 @@ def apply_kernel(image: Image, kernel: np.ndarray) -> Image:
     # [2 0 -2]
     # [1 0 -1]
 
-    new_im = Image(image.array.shape)
+    new_img = Image(image.array.shape)
     kernel_size = kernel.shape[0]
     neighbour_range = kernel_size // 2
 
-    for x in range(new_im.x_pixels):
-        for y in range(new_im.y_pixels):
-            for c in range(new_im.num_channels):
+    for x in range(new_img.x_pixels):
+        for y in range(new_img.y_pixels):
+            for c in range(new_img.num_channels):
                 total = 0
 
                 for x_i in range(
                     max(0, x - neighbour_range),
-                    min(new_im.x_pixels - 1, x + neighbour_range) + 1,
+                    min(new_img.x_pixels - 1, x + neighbour_range) + 1,
                 ):
                     for y_i in range(
                         max(0, y - neighbour_range),
-                        min(new_im.y_pixels - 1, y + neighbour_range) + 1,
+                        min(new_img.y_pixels - 1, y + neighbour_range) + 1,
                     ):
                         x_k = x_i + neighbour_range - x
                         y_k = y_i + neighbour_range - y
                         kernel_val = kernel[x_k, y_k]
                         total += image.array[x_i, y_i, c] * kernel_val
-                new_im.array[x, y, c] = total
+                new_img.array[x, y, c] = total
 
-    return new_im
+    return new_img
 
 
 def combine_images(image1: Image, image2: Image) -> Image:
@@ -148,34 +148,34 @@ if __name__ == "__main__":
     # adjust_contrast(lake, 2.0).write_image("increased_contrast_lake.png")
 
     # decrease contrast
-    adjust_contrast(lake, 0.5).write_image("decreased_contrast_lake.png")
+    # adjust_contrast(lake, 0.5).write_image("decreased_contrast_lake.png")
 
     # blurred with kernel of 3
-    # blur(lake, 3).write_image("blurred_lake_3.png")
+    # blur(city, 3).write_image("blurred_city_kernel_3.png")
 
     # blurred with kernel of 15
-    # blur(lake, 15).write_image("blurred_lake_15.png")
+    # blur(city, 15).write_image("blurred_city_kernel_15.png")
 
     # apply sobel edge detection kernel on the x and y axis
 
-    # sobel_x_kernel = np.array(
-    #     [
-    #         [1, 2, 1],
-    #         [0, 0, 0],
-    #         [-1, -2, -1],
-    #     ]
-    # )
+    sobel_x_kernel = np.array(
+        [
+            [1, 2, 1],
+            [0, 0, 0],
+            [-1, -2, -1],
+        ]
+    )
 
-    # sobel_y_kernel = np.array(
-    #     [
-    #         [1, 0, -1],
-    #         [2, 0, -2],
-    #         [1, 0, -1],
-    #     ]
-    # )
+    sobel_y_kernel = np.array(
+        [
+            [1, 0, -1],
+            [2, 0, -2],
+            [1, 0, -1],
+        ]
+    )
 
-    # apply_kernel(city, sobel_x_kernel).write_image("edge_x.png")
-    # apply_kernel(city, sobel_y_kernel).write_image("edge_y.png")
+    apply_kernel(city, sobel_x_kernel).write_image("edge_x.png")
+    apply_kernel(city, sobel_y_kernel).write_image("edge_y.png")
 
     # combine_images(
     #     Image(filename="edge_x.png"), Image(filename="edge_y.png")
